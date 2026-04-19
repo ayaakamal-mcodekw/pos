@@ -24,9 +24,19 @@ st.set_page_config(
 
 # ─── Custom CSS ───
 st.markdown("""
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    .material-icons {
+        font-family: 'Material Icons' !important;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 20px;
+        line-height: 1;
+        display: inline-block;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+    }
     .stApp { background-color: #f5f6fa; }
     .main-header {
         background: linear-gradient(90deg, #e94560, #c23152);
