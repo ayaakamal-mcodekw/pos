@@ -24,6 +24,7 @@ st.set_page_config(
 
 # ─── Custom CSS ───
 st.markdown("""
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
     .stApp { background-color: #f5f6fa; }
