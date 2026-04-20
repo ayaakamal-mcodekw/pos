@@ -98,6 +98,7 @@ def init_state():
         "areas": [],   # delivery areas
         "orders_history": [],  # completed orders
         "connected": False,
+        "edit_prefill": None,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -622,14 +623,25 @@ with tab_create:
         st.warning("👈 Connect to the server first using the sidebar!")
         st.info("1. Paste your Bearer token\n2. Click **Connect & Load Menu**\n3. Start creating orders!")
     else:
+        # ── Apply edit prefill if loaded from history ──
+        _prefill = st.session_state.get("edit_prefill")
+        if _prefill:
+            st.info("✏️ Order loaded for editing — modify as needed and submit.")
+
         # ── Order Type ──
         st.markdown("### Order Configuration")
+
+        _order_types = ["takeaway", "dine-in", "delivery", "talabat"]
+        _type_idx = _order_types.index(_prefill["type"]) if _prefill and _prefill.get("type") in _order_types else 0
+        _pay_opts = ["unpaid", "cash", "visa", "cash_visa"]
+        _pay_idx = _pay_opts.index(_prefill["payment"]) if _prefill and _prefill.get("payment") in _pay_opts else 0
 
         col_type, col_pay = st.columns(2)
         with col_type:
             order_type = st.selectbox(
                 "📋 Order Type",
-                ["takeaway", "dine-in", "delivery", "talabat"],
+                _order_types,
+                index=_type_idx,
                 format_func=lambda x: {
                     "dine-in": "🪑 في المطعم (Dine-in)",
                     "takeaway": "📦 إستلام (Takeaway)",
@@ -641,7 +653,8 @@ with tab_create:
         with col_pay:
             payment = st.selectbox(
                 "💳 Payment",
-                ["unpaid", "cash", "visa", "cash_visa"],
+                _pay_opts,
+                index=_pay_idx,
                 format_func=lambda x: {
                     "unpaid": "⏳ غير مدفوع (Unpaid)",
                     "cash": "💵 كاش (Cash)",
@@ -1006,7 +1019,12 @@ with tab_create:
             change = 0
 
         # ── Order Note ──
-        order_note = st.text_area("📝 Order Note", placeholder="Optional note for the entire order...", height=68)
+        _note_default = _prefill.get("note", "") if _prefill else ""
+        order_note = st.text_area("📝 Order Note", value=_note_default, placeholder="Optional note for the entire order...", height=68)
+
+        # Clear prefill after widgets have rendered
+        if _prefill:
+            st.session_state.edit_prefill = None
 
         # ── Number of copies ──
         st.markdown("### 🔄 Order Copies")
@@ -1203,11 +1221,21 @@ with tab_history:
                 else:
                     st.error(result.get("error", "Failed"))
 
-                # ── RECREATE BUTTON ──
+                # ── RECREATE / EDIT BUTTONS ──
                 st.divider()
-                rec_col1, rec_col2 = st.columns([1, 3])
+                rec_col1, rec_col2, rec_col3 = st.columns([1, 2, 1])
                 with rec_col1:
                     recreate_count = st.number_input("Copies", min_value=1, max_value=50, value=1, key=f"rec_count_{real_idx}")
+                with rec_col3:
+                    if st.button("✏️ Edit", key=f"edit_{real_idx}", use_container_width=True):
+                        full_items = config.get("_full_items", config.get("items", []))
+                        st.session_state.current_items = [dict(item) for item in full_items]
+                        st.session_state.edit_prefill = {
+                            "type": config.get("type", "takeaway"),
+                            "payment": config.get("payment", "unpaid"),
+                            "note": config.get("note", ""),
+                        }
+                        st.success("✅ Order loaded! Switch to **Create Orders** tab to edit.")
                 with rec_col2:
                     if st.button(f"🔄 Recreate {recreate_count}x", key=f"recreate_{real_idx}", type="primary", use_container_width=True):
                         recreate_progress = st.progress(0)
