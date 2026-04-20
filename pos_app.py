@@ -1058,12 +1058,30 @@ with tab_create:
                     order_config["address_id"] = address_id
                     addr_placeholder.success(f"✅ Address created (ID: {address_id})")
 
+                # For dine-in with multiple copies, build a pool of available tables
+                # starting with the selected table, then the rest of available tables
+                dine_in_table_pool = []
+                if order_type == "dine-in" and num_copies > 1:
+                    available_tables = [t for t in st.session_state.tables if t.get("is_available", False)]
+                    selected_first = [t for t in available_tables if t["id"] == table_id]
+                    rest = [t for t in available_tables if t["id"] != table_id]
+                    dine_in_table_pool = selected_first + rest
+
                 progress = st.progress(0)
                 status = st.empty()
 
                 results = []
                 for i in range(num_copies):
                     status.markdown(f"⏳ Creating order {i+1}/{num_copies}...")
+                    if dine_in_table_pool:
+                        if i < len(dine_in_table_pool):
+                            t = dine_in_table_pool[i]
+                            order_config["table_id"] = t["id"]
+                            order_config["table_name"] = t["name"]
+                        else:
+                            results.append({"success": False, "error": "No more available tables", "bill": 0, "order_id": None, "invoice_id": None, "raw": None})
+                            progress.progress((i + 1) / num_copies)
+                            continue
                     result = send_order(order_config)
                     results.append(result)
 
